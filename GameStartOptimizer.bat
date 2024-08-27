@@ -1,6 +1,18 @@
 @echo off
 setlocal enabledelayedexpansion
 
+:: Define the program to monitor
+set "program_to_monitor=fortniteclient-win64-shipping.exe"
+
+:check_program
+tasklist /FI "IMAGENAME eq %program_to_monitor%" 2>NUL | find /I "%program_to_monitor%" >NUL
+if "%ERRORLEVEL%"=="0" goto run_commands
+timeout /t 5 /nobreak >NUL
+goto check_program
+
+:run_commands
+echo Program %program_to_monitor% detected. Running batch commands...
+
 :: Delete temp files
 echo Deleting temporary files...
 del /s /q "%TEMP%\*"
@@ -27,31 +39,17 @@ del /s /q "C:\Windows\Prefetch\*"
 :: Delete Crash Dumps
 del /s /q "C:\Windows\Minidump\*"
 
-:: Set Power Plan to High Performance
-echo Setting power plan to High Performance...
-powercfg /setactive SCHEME_MIN
+:: Set Power Plan to Ultimate Performance
+echo Setting power plan to Ultimate Performance...
+powercfg /setactive e9a42b02-d5df-448d-aa00-03f14749eb61
 
 :: Disable Windows Defender Real-time Monitoring
 echo Disabling Windows Defender real-time monitoring...
 powershell -Command "Set-MpPreference -DisableRealtimeMonitoring $true"
 
-:: Disable Visual Effects (Adjust the settings more thoroughly)
-echo Adjusting visual effects for performance...
-powershell -Command "$regPath = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects'; Set-ItemProperty -Path $regPath -Name 'VisualFXSetting' -Value 2"
-
 :: Start an executable (change the path as needed)
 echo Starting MSIAfterburner...
 start "" "C:\Path\To\MSIAfterburner.exe"
-
-:: Kill unnecessary background processes (update with correct process names)
-
-:: Stop and disable OneDrive
-taskkill /f /im OneDrive.exe 2>nul
-reg add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run" /v OneDrive /t REG_SZ /d "" /f
-
-:: Stop Windows Search service
-net stop "WSearch" 2>nul
-sc config "WSearch" start=disabled
 
 :: Stop and disable Windows Update service
 net stop "wuauserv" 2>nul
@@ -72,7 +70,7 @@ for %%p in (%low_programs%) do (
 
 :: Set high priority for specified program
 echo Setting high priority for programs...
-set "high_programs=fortniteclient-win64-shipping.exe"
+set "high_programs=%program_to_monitor%"
 set "high_priority=128"
 
 for %%p in (%high_programs%) do (
@@ -81,9 +79,7 @@ for %%p in (%high_programs%) do (
 )
 
 :: Set CPU affinity for a specific process (example: using cores 0-3)
-:: Replace 'your_program' with the actual process name
-echo Setting CPU affinity for your_program...
-powershell -Command "Get-Process -Name 'your_program' | ForEach-Object { $_.ProcessorAffinity = [IntPtr] 15 }"
+powershell -Command "Get-Process -Name '%program_to_monitor%' | ForEach-Object { $_.ProcessorAffinity = [IntPtr] 15 }"
 
-echo All operations completed.
 pause
+exit
