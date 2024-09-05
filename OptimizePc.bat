@@ -1,9 +1,55 @@
 @echo off
-setlocal
+:: ---------------------------------------
+:: Ortify's PC Tweaker - Professional Version
+:: ---------------------------------------
+:: Create a system restore point
+echo Creating system restore point...
+powershell -command "Checkpoint-Computer -Description 'Pre-Tweaks Restore Point' -RestorePointType MODIFY_SETTINGS"
+echo.
 
-echo Optimizing PC for gaming...
+:: Display Menu
+:menu
+cls
+echo =====================================
+echo                Erix's
+echo           PC TWEAKING TOOL
+echo =====================================
+echo                MENU
+echo =====================================
+echo 1. Install reviOS
+echo 2. Install Profile Inspector
+echo 3. Optimize PC
+echo 4. Exit
+echo =====================================
+echo Credit to Chris Titus and Lecctron for all tweaks.
+set /p choice="Please enter your choice (1-4): "
 
-:: Enable Hardware-Accelerated GPU Scheduling (if supported)
+if "%choice%" == "1" goto install_revios
+if "%choice%" == "2" goto install_profile_inspector
+if "%choice%" == "3" goto optimize_pc
+if "%choice%" == "4" goto exit_script
+goto menu
+
+:: Option 1 - Install reviOS
+:install_revios
+echo Downloading reviOS...
+start https://revi.cc/revios/download/
+timeout /t 5
+goto menu
+
+:: Option 2 - Install Profile Inspector
+:install_profile_inspector
+echo Installing Profile Inspector...
+start https://github.com/Orbmu2k/nvidiaProfileInspector/releasestimeout 
+timeout /t 5
+goto menu
+
+:: Option 3 - Optimize PC for Gaming
+:optimize_pc
+cls
+echo Optimizing PC for Gaming...
+
+:: Enable Hardware-Accelerated GPU Scheduling
 echo Enabling Hardware-Accelerated GPU Scheduling...
 powershell -Command "if (Test-Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\HardwareSettings\HWSchMode') { Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\HardwareSettings' -Name 'HWSchMode' -Value 2 -Force }"
 
@@ -20,7 +66,81 @@ powershell -Command "& {Add-AppxPackage -register 'C:\Windows\System32\GraphicsP
 echo Enabling Game Mode...
 reg add "HKCU\Software\Microsoft\GameBar" /v "AllowAutoGameMode" /t REG_DWORD /d 1 /f
 
+:: Delete Temporary Files
+echo Deleting temporary files...
+del /q /s /f %TEMP%\*
+del /q /s /f C:\Windows\Temp\*
 
-echo PC optimization complete!
-pause
+:: Disable Consumer Features
+echo Disabling consumer features...
+reg add "HKLM\Software\Microsoft\Windows\CurrentVersion\CloudExperienceHost\FeatureManagement\Overrides" /v "EnabledState" /t REG_DWORD /d 1 /f
+
+:: Disable Telemetry
+echo Disabling telemetry...
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DataCollection" /v "AllowTelemetry" /t REG_DWORD /d 0 /f
+
+:: Disable Activity History
+echo Disabling activity history...
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v "PublishUserActivities" /t REG_DWORD /d 0 /f
+
+:: Disable GameDVR
+echo Disabling GameDVR...
+reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\GameDVR" /v "AppCaptureEnabled" /t REG_DWORD /d 0 /f
+
+:: Disable Hibernation
+echo Disabling hibernation...
+powercfg -h off
+
+:: Disable HomeGroup
+echo Disabling HomeGroup services...
+sc config "HomeGroupListener" start= disabled
+sc config "HomeGroupProvider" start= disabled
+
+:: Prefer IPv4 over IPv6
+echo Preferring IPv4 over IPv6...
+netsh interface ipv6 set global randomizeidentifiers=disabled
+reg add "HKLM\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters" /v "DisabledComponents" /t REG_DWORD /d 0x20 /f
+
+:: Disable Location Tracking
+echo Disabling location tracking...
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\LocationAndSensors" /v "DisableLocation" /t REG_DWORD /d 1 /f
+
+:: Disable Storage Sense
+echo Disabling Storage Sense...
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\StorageSense" /v "AllowStorageSenseGlobal" /t REG_DWORD /d 0 /f
+
+:: Enable End Task with Right Click in Taskbar
+echo Enabling end task with right-click...
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\System" /v "DisableTaskMgr" /t REG_DWORD /d 0 /f
+
+:: Run Disk Cleanup
+echo Running disk cleanup...
+cleanmgr /sagerun:1
+
+:: Change Windows Terminal Default to PowerShell 7
+echo Changing Windows Terminal default to PowerShell 7...
+reg add "HKCU\Console\%SystemRoot%_System32_WindowsPowerShell_v1.0_powershell.exe" /v "Target" /t REG_SZ /d "%ProgramFiles%\PowerShell\7\pwsh.exe" /f
+
+:: Disable PowerShell 7 Telemetry
+echo Disabling PowerShell 7 telemetry...
+reg add "HKLM\SOFTWARE\Microsoft\PowerShell\7" /v "DisableTelemetry" /t REG_DWORD /d 1 /f
+
+:: Set Services to Manual
+echo Setting services to manual...
+sc config "wuauserv" start= demand
+sc config "DiagTrack" start= demand
+
+:: Debloat Microsoft Edge
+echo Debloating Microsoft Edge...
+taskkill /im msedge.exe /f
+reg add "HKCU\Software\Microsoft\Edge" /v "HideFirstRunExperience" /t REG_DWORD /d 1 /f
+
+echo Optimization completed!
+timeout /t 5
+goto menu
+
+:: Exit the script
+:exit_script
+echo Exiting...
+timeout /t 2
 exit

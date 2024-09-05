@@ -1,6 +1,5 @@
 @echo off
 setlocal enabledelayedexpansion
-
 :: Define the program to monitor
 set "program_to_monitor=fortniteclient-win64-shipping.exe"
 
