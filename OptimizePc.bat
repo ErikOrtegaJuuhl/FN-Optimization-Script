@@ -1,7 +1,15 @@
 @echo off
 :: ---------------------------------------
-:: Ortify's PC Tweaker - Professional Version
+:: Erik's PC Tweaking Tool - Professional Version
 :: ---------------------------------------
+:: Check if running as admin
+openfiles >nul 2>&1
+if '%errorlevel%' neq '0' (
+    echo You need to run this script as an administrator.
+    pause
+    exit /b
+)
+
 :: Create a system restore point
 echo Creating system restore point...
 powershell -command "Checkpoint-Computer -Description 'Pre-Tweaks Restore Point' -RestorePointType MODIFY_SETTINGS"
@@ -11,7 +19,7 @@ echo.
 :menu
 cls
 echo =====================================
-echo                Erix's
+echo                Erik's
 echo           PC TWEAKING TOOL
 echo =====================================
 echo                MENU
@@ -40,7 +48,7 @@ goto menu
 :: Option 2 - Install Profile Inspector
 :install_profile_inspector
 echo Installing Profile Inspector...
-start https://github.com/Orbmu2k/nvidiaProfileInspector/releasestimeout 
+start https://github.com/Orbmu2k/nvidiaProfileInspector/releases
 timeout /t 5
 goto menu
 
@@ -135,8 +143,33 @@ echo Debloating Microsoft Edge...
 taskkill /im msedge.exe /f
 reg add "HKCU\Software\Microsoft\Edge" /v "HideFirstRunExperience" /t REG_DWORD /d 1 /f
 
+:: Import Ultimate Power Plan
+echo Importing Ultimate Power Plan...
+powercfg -import "%~dp0UltimatePowerPlan.pow"
+
+:: Set Ultimate Power Plan
+echo Setting Ultimate Power Plan...
+powercfg -setactive <UltimatePowerPlan_GUID>
+
 echo Optimization completed!
 timeout /t 5
+
+:: Restart Prompt
+:restart_prompt
+cls
+echo =====================================
+echo                RESTART
+echo =====================================
+echo The optimization is complete. You need to restart your PC for all changes to take effect.
+echo Do you want to restart now? (Y/N)
+set /p restart="Enter choice: "
+if /i "%restart%"=="Y" (
+    echo Restarting PC...
+    shutdown /r /t 0
+) else (
+    echo Please remember to restart your PC later to apply changes.
+)
+
 goto menu
 
 :: Exit the script
